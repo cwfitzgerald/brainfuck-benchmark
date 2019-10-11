@@ -28,19 +28,19 @@ impl BFImpl for DethraidBrainfuckBfImpl {
     }
 
     fn get(&self) {
-        git_repo(
-            URL.clone(),
-            SRC_DIR.clone(),
-        );
+        git_repo(URL.clone(), SRC_DIR.clone());
     }
 
     fn build(&self) {
-        run_command(Command::new("premake5").args(&["gmake2"]).current_dir(&*SRC_DIR));
+        run_command(
+            Command::new("premake5")
+                .args(&["gmake2"])
+                .current_dir(&*SRC_DIR),
+        );
         run_command(Command::new("make").args(&["config=release", "all", "-C", &*SRC_DIR]));
     }
 
-    fn prepare(&self, _file: PathBuf) {
-    }
+    fn prepare(&self, _file: PathBuf) {}
 
     fn get_invoke_command(&self, file: PathBuf) -> String {
         let file_str = file.to_string_lossy().to_string();
@@ -49,6 +49,8 @@ impl BFImpl for DethraidBrainfuckBfImpl {
 
     fn filter_output(&self, contents: String) -> String {
         let regex = regex::Regex::new(&format!("`{}.*?`", &*RESULT_EXE)).unwrap();
-        regex.replace(&contents, format!("[`{}`]({})", &*NAME, &*WEBSITE).as_str()).into()
+        regex
+            .replace(&contents, format!("[`{}`]({})", &*NAME, &*WEBSITE).as_str())
+            .into()
     }
 }

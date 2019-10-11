@@ -1,8 +1,9 @@
-use std::path::PathBuf;
-use std::process::{Command, exit};
-use std::fs::{create_dir_all, copy, remove_dir_all, read_dir, canonicalize, read_to_string, File};
-use std::io::Write;
 use bf_impl::*;
+use glob::{glob_with, MatchOptions, Paths};
+use std::fs::{canonicalize, copy, create_dir_all, read_dir, read_to_string, remove_dir_all, File};
+use std::io::Write;
+use std::path::PathBuf;
+use std::process::{exit, Command};
 
 mod bf_impl;
 
@@ -56,12 +57,31 @@ fn git_repo(url: String, folder: String) {
     if folder_path.exists() {
         assert_eq!(folder_path.is_dir(), true);
 
-        run_command(Command::new("git")
-            .args(&["pull", "--ff", "origin", "master"])
-            .current_dir(folder));
+        run_command(
+            Command::new("git")
+                .args(&["pull", "--ff", "origin", "master"])
+                .current_dir(folder),
+        );
     } else {
         run_command(Command::new("git").args(&["clone", &url, &folder]));
     }
+}
+
+fn compile_c_code(output: &str, out_dir: &str, glob: String, options: &[String], cpp: bool) {
+    let res = glob::glob(&glob).unwrap().map(|x| x.unwrap());
+
+    let mut b = cc::Build::new()
+        .files(res)
+        .cpp(cpp)
+        .debug(false)
+        .opt_level(3)
+        .out_dir(out_dir)
+        .clone();
+    for op in options {
+        b.flag(op);
+        c
+    }
+    b.compile(output);
 }
 
 fn main() {
@@ -69,12 +89,12 @@ fn main() {
     create_dir_all("build/out").unwrap();
     create_dir_all("results").unwrap();
 
-    let mut bf: Vec<Box<dyn BFImpl + Send + Sync>> =
-        vec![Box::new(WilfredBfcBfImpl),
-             Box::new(CwfitzgeraldBfccBfImpl),
-             Box::new(CwfitzgeraldBfccOldBfImpl),
-//             Box::new(DethraidBrainfuckBfImpl),
-        ];
+    let mut bf: Vec<Box<dyn BFImpl + Send + Sync>> = vec![
+        Box::new(WilfredBfcBfImpl),
+        Box::new(CwfitzgeraldBfccBfImpl),
+        Box::new(CwfitzgeraldBfccOldBfImpl),
+        Box::new(DethraidBrainfuckBfImpl),
+    ];
     bf.sort_unstable_by_key(|v| v.name());
 
     let mut benches: Vec<_> = read_dir("benches").unwrap().into_iter().collect();
@@ -112,8 +132,19 @@ fn main() {
         }
 
         let result_md = format!("results/{}.md", file_stem);
-        let extra = vec!["-s".into(), "full".into(), "-m".into(), "3".into(), "--export-markdown".into(), result_md.clone()];
-        let v: Vec<String> = bf.iter().map(|b| b.get_invoke_command(full_path.clone())).chain(extra.into_iter()).collect();
+        let extra = vec![
+            "-s".into(),
+            "full".into(),
+            "-m".into(),
+            "3".into(),
+            "--export-markdown".into(),
+            result_md.clone(),
+        ];
+        let v: Vec<String> = bf
+            .iter()
+            .map(|b| b.get_invoke_command(full_path.clone()))
+            .chain(extra.into_iter())
+            .collect();
 
         println!("Benchmarking...");
 
@@ -133,5 +164,8 @@ fn main() {
         println!("\nBenchmark finished!");
     }
 
-    File::create("results/full.md").unwrap().write_all(full_output.as_bytes()).unwrap();
+    File::create("results/full.md")
+        .unwrap()
+        .write_all(full_output.as_bytes())
+        .unwrap();
 }

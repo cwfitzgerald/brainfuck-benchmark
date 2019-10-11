@@ -29,14 +29,15 @@ impl BFImpl for WilfredBfcBfImpl {
     }
 
     fn get(&self) {
-        git_repo(
-            URL.clone(),
-            SRC_DIR.clone(),
-        );
+        git_repo(URL.clone(), SRC_DIR.clone());
     }
 
     fn build(&self) {
-        run_command(Command::new("cargo").args(&["build", "--release"]).current_dir(&*SRC_DIR));
+        run_command(
+            Command::new("cargo")
+                .args(&["build", "--release"])
+                .current_dir(&*SRC_DIR),
+        );
     }
 
     fn prepare(&self, file: PathBuf) {
@@ -44,7 +45,11 @@ impl BFImpl for WilfredBfcBfImpl {
 
         create_dir_all(&*OUT_FOLDER).unwrap();
 
-        run_command(Command::new("../../../../build/src/wilfred/bfc/target/release/bfc").args(&[&file]).current_dir(&*OUT_FOLDER));
+        run_command(
+            Command::new("../../../../build/src/wilfred/bfc/target/release/bfc")
+                .args(&[&file])
+                .current_dir(&*OUT_FOLDER),
+        );
 
         let exe_location: PathBuf = path_dsl::path!((&*OUT_FOLDER) | file_name).into();
         copy(exe_location, &*RESULT_EXE).unwrap();
@@ -57,6 +62,9 @@ impl BFImpl for WilfredBfcBfImpl {
     }
 
     fn filter_output(&self, contents: String) -> String {
-        contents.replace(&format!("`{}`", &*RESULT_EXE), &format!("[`{}`]({})", &*NAME, &*WEBSITE))
+        contents.replace(
+            &format!("`{}`", &*RESULT_EXE),
+            &format!("[`{}`]({})", &*NAME, &*WEBSITE),
+        )
     }
 }

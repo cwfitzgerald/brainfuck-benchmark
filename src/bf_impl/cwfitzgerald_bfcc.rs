@@ -28,18 +28,14 @@ impl BFImpl for CwfitzgeraldBfccBfImpl {
     }
 
     fn get(&self) {
-        git_repo(
-            URL.clone(),
-            SRC_DIR.clone(),
-        );
+        git_repo(URL.clone(), SRC_DIR.clone());
     }
 
     fn build(&self) {
         run_command(Command::new("make").args(&["-C", &*SRC_DIR]));
     }
 
-    fn prepare(&self, _file: PathBuf) {
-    }
+    fn prepare(&self, _file: PathBuf) {}
 
     fn get_invoke_command(&self, file: PathBuf) -> String {
         let file_str = file.to_string_lossy().to_string();
@@ -48,6 +44,8 @@ impl BFImpl for CwfitzgeraldBfccBfImpl {
 
     fn filter_output(&self, contents: String) -> String {
         let regex = regex::Regex::new(&format!("`{}.*?`", &*RESULT_EXE)).unwrap();
-        regex.replace(&contents, format!("[`{}`]({})", &*NAME, &*WEBSITE).as_str()).into()
+        regex
+            .replace(&contents, format!("[`{}`]({})", &*NAME, &*WEBSITE).as_str())
+            .into()
     }
 }
