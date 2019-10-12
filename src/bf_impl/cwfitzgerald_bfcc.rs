@@ -32,7 +32,12 @@ impl BFImpl for CwfitzgeraldBfccBfImpl {
     }
 
     fn build(&self) {
-        run_command(Command::new("make").args(&["-C", &*SRC_DIR]));
+        create_dir_all(&*OUT_FOLDER).unwrap();
+
+        create_cmake("bfcc", &*SRC_DIR, &format!("{}/**/*.cpp", &*SRC_DIR));
+        build_cmake(&*OUT_FOLDER, &*SRC_DIR);
+
+        remove_dir_all(&*OUT_FOLDER).unwrap();
     }
 
     fn prepare(&self, _file: PathBuf) {}

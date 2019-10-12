@@ -1,5 +1,10 @@
+#![feature(proc_macro_hygiene)]
+
 use bf_impl::*;
 use glob::{glob_with, MatchOptions, Paths};
+use indoc::indoc;
+use itertools::Itertools;
+use std::env::current_dir;
 use std::fs::{canonicalize, copy, create_dir_all, read_dir, read_to_string, remove_dir_all, File};
 use std::io::Write;
 use std::path::PathBuf;
@@ -65,6 +70,50 @@ fn git_repo(url: String, folder: String) {
     } else {
         run_command(Command::new("git").args(&["clone", &url, &folder]));
     }
+}
+
+fn create_cmake(name: &str, src_dir: &str, glob: &str) {
+    let files = glob::glob(glob).unwrap();
+    let p = PathBuf::new();
+    p.as_os_str().to_string_lossy().to_string();
+    let files_str = files
+        .into_iter()
+        .map(|f| {
+            let p = path_dsl::path!((current_dir().unwrap()) | (f.unwrap()))
+                .as_os_str()
+                .to_string_lossy()
+                .to_string();
+
+            format!("\"{}\"", p)
+        })
+        .join("\n    ");
+    let cmake = format!(
+        indoc!(
+            "
+        cmake_minimum_required(VERSION 3.12)
+        project({0:} LANGUAGES C CXX)
+        add_executable(
+            {0:}
+            {1:}
+        )"
+        ),
+        name, files_str
+    );
+    let cmake = cmake.replace("\\", "/");
+    File::create(&path_dsl::path!(src_dir | "CMakeLists.txt"))
+        .unwrap()
+        .write_all(cmake.as_bytes()).unwrap();
+}
+
+fn build_cmake(output_dir: &str, src_dir: &str) {
+    run_command(Command::new("cmake").args(&[
+        "-S",
+        src_dir,
+        "-B",
+        output_dir,
+        "-DCMAKE_BUILD_TYPE=Release",
+    ]));
+    run_command(Command::new("cmake").args(&["--build", &output_dir]));
 }
 
 fn main() {
