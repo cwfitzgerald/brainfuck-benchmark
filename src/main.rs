@@ -67,23 +67,6 @@ fn git_repo(url: String, folder: String) {
     }
 }
 
-fn compile_c_code(output: &str, out_dir: &str, glob: String, options: &[String], cpp: bool) {
-    let res = glob::glob(&glob).unwrap().map(|x| x.unwrap());
-
-    let mut b = cc::Build::new()
-        .files(res)
-        .cpp(cpp)
-        .debug(false)
-        .opt_level(3)
-        .out_dir(out_dir)
-        .clone();
-    for op in options {
-        b.flag(op);
-        c
-    }
-    b.compile(output);
-}
-
 fn main() {
     create_dir_all("build/src").unwrap();
     create_dir_all("build/out").unwrap();

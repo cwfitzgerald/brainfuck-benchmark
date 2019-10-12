@@ -37,7 +37,7 @@ impl BFImpl for DethraidBrainfuckBfImpl {
                 .args(&["gmake2"])
                 .current_dir(&*SRC_DIR),
         );
-        run_command(Command::new("make").args(&["config=release", "all", "-C", &*SRC_DIR]));
+        run_command(Command::new("make").args(&["config=release_linux", "all", "-C", &*SRC_DIR]));
     }
 
     fn prepare(&self, _file: PathBuf) {}
