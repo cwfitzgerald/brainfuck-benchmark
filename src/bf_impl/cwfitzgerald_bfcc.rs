@@ -35,7 +35,7 @@ impl BFImpl for CwfitzgeraldBfccBfImpl {
         create_dir_all(&*OUT_FOLDER).unwrap();
 
         create_cmake("bfcc", &*SRC_DIR, &format!("{}/**/*.cpp", &*SRC_DIR));
-        build_cmake(&*OUT_FOLDER, &*SRC_DIR);
+        build_cmake("bfcc", &*OUT_FOLDER, &*SRC_DIR);
 
         remove_dir_all(&*OUT_FOLDER).unwrap();
     }

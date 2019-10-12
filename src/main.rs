@@ -92,6 +92,7 @@ fn create_cmake(name: &str, src_dir: &str, glob: &str) {
             "
         cmake_minimum_required(VERSION 3.12)
         project({0:} LANGUAGES C CXX)
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${{CMAKE_BINARY_DIR}})
         add_executable(
             {0:}
             {1:}
@@ -105,7 +106,7 @@ fn create_cmake(name: &str, src_dir: &str, glob: &str) {
         .write_all(cmake.as_bytes()).unwrap();
 }
 
-fn build_cmake(output_dir: &str, src_dir: &str) {
+fn build_cmake(name: &str, output_dir: &str, src_dir: &str) {
     run_command(Command::new("cmake").args(&[
         "-S",
         src_dir,
@@ -113,7 +114,12 @@ fn build_cmake(output_dir: &str, src_dir: &str) {
         output_dir,
         "-DCMAKE_BUILD_TYPE=Release",
     ]));
-    run_command(Command::new("cmake").args(&["--build", &output_dir]));
+    run_command(Command::new("cmake").args(&["--build", &output_dir, "--config", "release"]));
+    #[cfg(target_os = "windows")]
+    {
+        let exe = format!("{}.exe", name);
+        copy(&path_dsl::path!(output_dir | "Release" | &exe), &path_dsl::path!(output_dir | exe)).unwrap();
+    }
 }
 
 fn main() {
