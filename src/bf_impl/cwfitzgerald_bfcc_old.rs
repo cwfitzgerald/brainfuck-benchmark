@@ -15,7 +15,7 @@ lazy_static::lazy_static! {
     /// Folder in the out folder for temporaries. Must be deleted after the preparation stage.
     static ref OUT_FOLDER: String = String::from("build/out/cwfitzgerald/bfcc-old");
     /// Actual EXE ran.
-    static ref RESULT_EXE: String = String::from("build/src/cwfitzgerald/bfcc-old/bfcc");
+    static ref RESULT_EXE: String = String::from("build/out/cwfitzgerald/bfcc-old/bfcc");
 }
 
 impl BFImpl for CwfitzgeraldBfccOldBfImpl {
@@ -27,14 +27,19 @@ impl BFImpl for CwfitzgeraldBfccOldBfImpl {
         true
     }
 
+    fn enabled(&self) -> bool {
+        true
+    }
+
     fn get(&self) {
         git_repo(URL.clone(), SRC_DIR.clone());
     }
 
     fn build(&self) {
-        create_dir_all(path_dsl::path!((&*SRC_DIR) | "bin").as_path()).unwrap();
+        create_dir_all(&*OUT_FOLDER).unwrap();
 
-        run_command(Command::new("make").args(&["-C", &*SRC_DIR]));
+        create_cmake("bfcc", &*SRC_DIR, &format!("{}/**/*.cpp", &*SRC_DIR));
+        build_cmake("bfcc", &*OUT_FOLDER, &*SRC_DIR);
     }
 
     fn prepare(&self, _file: PathBuf) {}

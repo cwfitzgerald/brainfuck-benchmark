@@ -1,4 +1,4 @@
-#![feature(proc_macro_hygiene)]
+#![feature(proc_macro_hygiene, stmt_expr_attributes)]
 
 use bf_impl::*;
 use glob::{glob_with, MatchOptions, Paths};
@@ -19,6 +19,9 @@ trait BFImpl {
 
     /// Returns if it is an interpreter
     fn interpreted(&self) -> bool;
+
+    /// Enabled on current platform
+    fn enabled(&self) -> bool;
 
     /// Stage for fetching the source/binary from the sky
     fn get(&self);
@@ -54,6 +57,23 @@ fn run_command(c: &mut Command) {
             String::from_utf8(command_output.stderr).unwrap()
         );
         exit(1);
+    }
+}
+
+fn run_command_with_pipe(c: &mut Command, output: &str) {
+    let command_output = c.output().unwrap();
+
+    if !command_output.status.success() {
+        println!(
+            "Command {:#?} output {}:\n\nSTDOUT:\n{}\n\nSTDERR:\n{}",
+            c,
+            command_output.status.code().unwrap(),
+            String::from_utf8(command_output.stdout).unwrap(),
+            String::from_utf8(command_output.stderr).unwrap()
+        );
+        exit(1);
+    } else {
+        File::create(output).unwrap().write_all(&command_output.stdout).unwrap();
     }
 }
 
@@ -101,9 +121,12 @@ fn create_cmake(name: &str, src_dir: &str, glob: &str) {
         name, files_str
     );
     let cmake = cmake.replace("\\", "/");
-    File::create(&path_dsl::path!(src_dir | "CMakeLists.txt"))
-        .unwrap()
-        .write_all(cmake.as_bytes()).unwrap();
+    let path = path_dsl::path!(src_dir | "CMakeLists.txt");
+    if !path.exists() {
+        File::create(&path_dsl::path!(src_dir | "CMakeLists.txt"))
+            .unwrap()
+            .write_all(cmake.as_bytes()).unwrap();
+    }
 }
 
 fn build_cmake(name: &str, output_dir: &str, src_dir: &str) {
@@ -123,6 +146,7 @@ fn build_cmake(name: &str, output_dir: &str, src_dir: &str) {
 }
 
 fn main() {
+    print!("{}", std::env::var("Path").unwrap());
     create_dir_all("build/src").unwrap();
     create_dir_all("build/out").unwrap();
     create_dir_all("results").unwrap();
@@ -131,9 +155,11 @@ fn main() {
         Box::new(WilfredBfcBfImpl),
         Box::new(CwfitzgeraldBfccBfImpl),
         Box::new(CwfitzgeraldBfccOldBfImpl),
+        Box::new(LifthrasiirEsotopeBfImpl),
         Box::new(DethraidBrainfuckBfImpl),
     ];
     bf.sort_unstable_by_key(|v| v.name());
+    bf.retain(|v| v.enabled());
 
     let mut benches: Vec<_> = read_dir("benches").unwrap().into_iter().collect();
     benches.sort_unstable_by_key(|v| v.as_ref().unwrap().file_name());
@@ -155,7 +181,7 @@ fn main() {
     for bench in benches {
         let bench = bench.unwrap();
         let rel_path = bench.path().to_string_lossy().to_string();
-        let full_path = canonicalize(bench.path()).unwrap();
+        let mut full_path: PathBuf = path_dsl::path!((current_dir().unwrap()) | (bench.path())).into();
         let file_name = full_path.file_name().unwrap().to_string_lossy().to_string();
         let file_stem = full_path.file_stem().unwrap().to_string_lossy().to_string();
 
@@ -170,14 +196,29 @@ fn main() {
         }
 
         let result_md = format!("results/{}.md", file_stem);
-        let extra = vec![
-            "-s".into(),
-            "full".into(),
-            "-m".into(),
-            "3".into(),
-            "--export-markdown".into(),
-            result_md.clone(),
-        ];
+        cfg_if::cfg_if! {
+            if #[cfg(windows)] {
+                let extra = vec![
+                    "--show-output".into(),
+                    "-m".into(),
+                    "3".into(),
+                    "--export-markdown".into(),
+                    result_md.clone(),
+                    "--shell".into(),
+                    "powershell".into()
+                ];
+             }
+             else {
+                let extra = vec![
+                    "--show-output".into(),
+                    "-m".into(),
+                    "3".into(),
+                    "--show-output".into(),
+                    "--export-markdown".into(),
+                    result_md.clone(),
+                ];
+             }
+        }
         let v: Vec<String> = bf
             .iter()
             .map(|b| b.get_invoke_command(full_path.clone()))
@@ -196,8 +237,6 @@ fn main() {
         }
 
         full_output += &format!("# {}\n{}", file_name, output_file);
-
-        remove_dir_all("build/out").unwrap();
 
         println!("\nBenchmark finished!");
     }

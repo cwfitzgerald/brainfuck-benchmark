@@ -27,17 +27,34 @@ impl BFImpl for DethraidBrainfuckBfImpl {
         true
     }
 
+    fn enabled(&self) -> bool {
+        true
+    }
+
     fn get(&self) {
         git_repo(URL.clone(), SRC_DIR.clone());
     }
 
     fn build(&self) {
-        run_command(
-            Command::new("premake5")
-                .args(&["gmake2"])
-                .current_dir(&*SRC_DIR),
-        );
-        run_command(Command::new("make").args(&["config=release_linux", "all", "-C", &*SRC_DIR]));
+        #[cfg(not(windows))]
+        {
+            panic!();
+            run_command(
+                Command::new("premake5")
+                    .args(&["gmake2"])
+                    .current_dir(&*SRC_DIR),
+            );
+            run_command(Command::new("make").args(&["config=release_linux", "all", "-C", &*SRC_DIR]));
+        }
+        #[cfg(windows)]
+        {
+            run_command(
+                Command::new("premake5")
+                    .args(&["vs2019"])
+                    .current_dir(&*SRC_DIR),
+            );
+            run_command(Command::new("msbuild").args(&["/p:Configuration=Release", "/p:Platform=Win64"]).current_dir(&*SRC_DIR));
+        }
     }
 
     fn prepare(&self, _file: PathBuf) {}

@@ -28,11 +28,27 @@ impl BFImpl for WilfredBfcBfImpl {
         false
     }
 
+    fn enabled(&self) -> bool {
+        cfg_if::cfg_if!{
+            if #[cfg(platform = "windows")] {
+                return false;
+            }
+            else {
+                return false;
+            }
+        };
+    }
+
     fn get(&self) {
         git_repo(URL.clone(), SRC_DIR.clone());
     }
 
     fn build(&self) {
+        run_command(
+            Command::new("cargo")
+                .args(&["update"])
+                .current_dir(&*SRC_DIR),
+        );
         run_command(
             Command::new("cargo")
                 .args(&["build", "--release"])

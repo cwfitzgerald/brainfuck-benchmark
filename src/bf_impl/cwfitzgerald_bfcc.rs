@@ -15,7 +15,7 @@ lazy_static::lazy_static! {
     /// Folder in the out folder for temporaries. Must be deleted after the preparation stage.
     static ref OUT_FOLDER: String = String::from("build/out/cwfitzgerald/bfcc");
     /// Actual EXE ran.
-    static ref RESULT_EXE: String = String::from("build/src/cwfitzgerald/bfcc/bfcc");
+    static ref RESULT_EXE: String = String::from("build/out/cwfitzgerald/bfcc/bfcc");
 }
 
 impl BFImpl for CwfitzgeraldBfccBfImpl {
@@ -24,6 +24,10 @@ impl BFImpl for CwfitzgeraldBfccBfImpl {
     }
 
     fn interpreted(&self) -> bool {
+        true
+    }
+
+    fn enabled(&self) -> bool {
         true
     }
 
@@ -36,8 +40,6 @@ impl BFImpl for CwfitzgeraldBfccBfImpl {
 
         create_cmake("bfcc", &*SRC_DIR, &format!("{}/**/*.cpp", &*SRC_DIR));
         build_cmake("bfcc", &*OUT_FOLDER, &*SRC_DIR);
-
-        remove_dir_all(&*OUT_FOLDER).unwrap();
     }
 
     fn prepare(&self, _file: PathBuf) {}
