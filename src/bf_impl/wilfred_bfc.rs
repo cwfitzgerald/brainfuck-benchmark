@@ -30,11 +30,11 @@ impl BFImpl for WilfredBfcBfImpl {
 
     fn enabled(&self) -> bool {
         cfg_if::cfg_if!{
-            if #[cfg(platform = "windows")] {
+            if #[cfg(windows)] {
                 return false;
             }
             else {
-                return false;
+                return true;
             }
         };
     }

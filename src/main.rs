@@ -1,15 +1,15 @@
 #![feature(proc_macro_hygiene, stmt_expr_attributes)]
 
 use bf_impl::*;
-use glob::{glob_with, MatchOptions, Paths};
 use indoc::indoc;
 use itertools::Itertools;
 use std::env::current_dir;
-use std::fs::{canonicalize, copy, create_dir_all, read_dir, read_to_string, remove_dir_all, File};
+use std::fs::{copy, create_dir_all, read_dir, read_to_string, remove_dir_all, File};
 use std::io::Write;
 use structopt::StructOpt;
 use std::path::PathBuf;
 use std::process::{exit, Command};
+use regex::Regex;
 
 mod bf_impl;
 
@@ -130,7 +130,7 @@ fn create_cmake(name: &str, src_dir: &str, glob: &str) {
     }
 }
 
-fn build_cmake(name: &str, output_dir: &str, src_dir: &str) {
+fn build_cmake(_name: &str, output_dir: &str, src_dir: &str) {
     run_command(Command::new("cmake").args(&[
         "-S",
         src_dir,
@@ -141,7 +141,7 @@ fn build_cmake(name: &str, output_dir: &str, src_dir: &str) {
     run_command(Command::new("cmake").args(&["--build", &output_dir, "--config", "release"]));
     #[cfg(target_os = "windows")]
     {
-        let exe = format!("{}.exe", name);
+        let exe = format!("{}.exe", _name);
         copy(&path_dsl::path!(output_dir | "Release" | &exe), &path_dsl::path!(output_dir | exe)).unwrap();
     }
 }
@@ -151,12 +151,20 @@ fn build_cmake(name: &str, output_dir: &str, src_dir: &str) {
 #[structopt(name = "brainfuck-benchmark")]
 struct Options {
     /// Regex to select which implementations to run
-    #[structopt(short, long)]
+    #[structopt(short, long = "impls")]
     impl_regex: Option<String>,
 
     /// Regex to select which benchmarks will run
-    #[structopt(short, long)]
+    #[structopt(short, long = "benches")]
     bench_regex: Option<String>,
+
+    /// Don't run interpreters
+    #[structopt(long)]
+    no_interpreters: bool,
+
+    /// Don't run compilers
+    #[structopt(long)]
+    no_compilers: bool,
 
     /// Clean all temporary data and quit
     #[structopt(long)]
@@ -172,6 +180,9 @@ fn main() {
         exit(0);
     }
 
+    let impl_regex = opt.impl_regex.as_ref().map(|s| Regex::new(&s).unwrap());
+    let bench_regex = opt.bench_regex.as_ref().map(|s| Regex::new(&s).unwrap());
+
     create_dir_all("build/src").unwrap();
     create_dir_all("build/out").unwrap();
     create_dir_all("results").unwrap();
@@ -184,10 +195,27 @@ fn main() {
         Box::new(DethraidBrainfuckBfImpl),
     ];
     bf.sort_unstable_by_key(|v| v.name());
-    bf.retain(|v| v.enabled());
+    bf.retain(|v| {
+        let enabled = v.enabled();
+        let regex_enabled = match &impl_regex {
+            Some(r) => r.is_match(v.name()),
+            None => true,
+        };
+        let type_enabled = match v.interpreted() {
+            true => !opt.no_interpreters,
+            false => !opt.no_compilers,
+        };
+        enabled && regex_enabled && type_enabled
+    });
 
-    let mut benches: Vec<_> = read_dir("benches").unwrap().into_iter().collect();
-    benches.sort_unstable_by_key(|v| v.as_ref().unwrap().file_name());
+    let mut benches: Vec<_> = read_dir("benches").unwrap().into_iter().map(|x| x.unwrap()).collect();
+    benches.sort_unstable_by_key(|v| v.file_name());
+    benches.retain(|b| {
+        match &bench_regex {
+            Some(r) => r.is_match(&b.file_name().to_string_lossy()),
+            None => true,
+        }
+    });
 
     for b in &bf {
         println!("Fetching {}", b.name());
@@ -204,9 +232,8 @@ fn main() {
     let mut full_output = String::new();
 
     for bench in benches {
-        let bench = bench.unwrap();
         let rel_path = bench.path().to_string_lossy().to_string();
-        let mut full_path: PathBuf = path_dsl::path!((current_dir().unwrap()) | (bench.path())).into();
+        let full_path: PathBuf = path_dsl::path!((current_dir().unwrap()) | (bench.path())).into();
         let file_name = full_path.file_name().unwrap().to_string_lossy().to_string();
         let file_stem = full_path.file_stem().unwrap().to_string_lossy().to_string();
 
