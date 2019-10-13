@@ -14,6 +14,7 @@ itertools = "0.8.0"
 indoc = { version = "0.3.4", features = ["unstable"] }
 path-dsl = "0.5.4"
 regex = { version = "1.3.1", default-features = false, features = ["std", "unicode"] }
+structopt = "0.3.3"
 
 # You are meant to just cargo run this, so give us a chance
 # Also what is debugging?

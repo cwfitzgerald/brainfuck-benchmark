@@ -38,7 +38,6 @@ impl BFImpl for DethraidBrainfuckBfImpl {
     fn build(&self) {
         #[cfg(not(windows))]
         {
-            panic!();
             run_command(
                 Command::new("premake5")
                     .args(&["gmake2"])

@@ -7,6 +7,7 @@ use itertools::Itertools;
 use std::env::current_dir;
 use std::fs::{canonicalize, copy, create_dir_all, read_dir, read_to_string, remove_dir_all, File};
 use std::io::Write;
+use structopt::StructOpt;
 use std::path::PathBuf;
 use std::process::{exit, Command};
 
@@ -145,8 +146,32 @@ fn build_cmake(name: &str, output_dir: &str, src_dir: &str) {
     }
 }
 
+/// A program to benchmark various different brainfuck implementations,
+#[derive(StructOpt)]
+#[structopt(name = "brainfuck-benchmark")]
+struct Options {
+    /// Regex to select which implementations to run
+    #[structopt(short, long)]
+    impl_regex: Option<String>,
+
+    /// Regex to select which benchmarks will run
+    #[structopt(short, long)]
+    bench_regex: Option<String>,
+
+    /// Clean all temporary data and quit
+    #[structopt(long)]
+    clean: bool,
+}
+
 fn main() {
-    print!("{}", std::env::var("Path").unwrap());
+    let opt: Options = Options::from_args();
+
+    if opt.clean {
+        let _ = remove_dir_all("build");
+        let _ = remove_dir_all("results");
+        exit(0);
+    }
+
     create_dir_all("build/src").unwrap();
     create_dir_all("build/out").unwrap();
     create_dir_all("results").unwrap();
@@ -213,7 +238,6 @@ fn main() {
                     "--show-output".into(),
                     "-m".into(),
                     "3".into(),
-                    "--show-output".into(),
                     "--export-markdown".into(),
                     result_md.clone(),
                 ];
