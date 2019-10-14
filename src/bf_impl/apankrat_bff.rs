@@ -1,24 +1,24 @@
 use crate::*;
 
 #[derive(Clone)]
-pub struct CwfitzgeraldBfccOldBfImpl;
+pub struct ApankratBffBfImpl;
 
 lazy_static::lazy_static! {
     /// Name of the interpreter. Often a github repo or website name.
-    static ref NAME: String = String::from("cwfitzgerald/bfcc-old");
+    static ref NAME: String = String::from("apankrat/bff");
     /// Source Website
-    static ref WEBSITE: String = String::from("https://github.com/cwfitzgerald/bfcc-old");
+    static ref WEBSITE: String = String::from("https://github.com/apankrat/bff");
     /// Source URL
-    static ref URL: String = String::from("https://github.com/cwfitzgerald/bfcc-old.git");
+    static ref URL: String = String::from("https://github.com/apankrat/bff.git");
     /// Source folder
-    static ref SRC_DIR: String = String::from("build/src/cwfitzgerald/bfcc-old");
-    /// Folder in the out folder for temporaries. Must be deleted after the preparation stage.
-    static ref OUT_FOLDER: String = String::from("build/out/cwfitzgerald/bfcc-old");
+    static ref SRC_DIR: String = String::from("build/src/apankrat/bff");
+    /// Folder in the out folder for temporaries.
+    static ref OUT_FOLDER: String = String::from("build/out/apankrat/bff");
     /// Actual EXE ran.
-    static ref RESULT_EXE: String = String::from("build/out/cwfitzgerald/bfcc-old/bfcc");
+    static ref RESULT_EXE: String = String::from("build/out/apankrat/bff/bff");
 }
 
-impl BFImpl for CwfitzgeraldBfccOldBfImpl {
+impl BFImpl for ApankratBffBfImpl {
     fn name(&self) -> String {
         NAME.clone()
     }
@@ -38,15 +38,15 @@ impl BFImpl for CwfitzgeraldBfccOldBfImpl {
     fn build(&self) {
         create_dir_all(&*OUT_FOLDER).unwrap();
 
-        create_cmake("bfcc", &*SRC_DIR, &format!("{}/**/*.cpp", &*SRC_DIR));
-        build_cmake("bfcc", &*OUT_FOLDER, &*SRC_DIR);
+        create_cmake("bff", &*SRC_DIR, &format!("{}/bff.c", &*SRC_DIR));
+        build_cmake("bff", &*OUT_FOLDER, &*SRC_DIR);
     }
 
     fn prepare(&self, _file: PathBuf) {}
 
     fn get_invoke_command(&self, file: PathBuf) -> String {
         let file_str = file.to_string_lossy().to_string();
-        format!("{} -i {}", &*RESULT_EXE, file_str)
+        format!("{} {}", &*RESULT_EXE, file_str)
     }
 
     fn filter_output(&self, contents: String) -> String {

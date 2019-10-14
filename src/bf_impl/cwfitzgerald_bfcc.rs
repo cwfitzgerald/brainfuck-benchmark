@@ -19,8 +19,8 @@ lazy_static::lazy_static! {
 }
 
 impl BFImpl for CwfitzgeraldBfccBfImpl {
-    fn name(&self) -> &'static str {
-        &NAME
+    fn name(&self) -> String {
+        NAME.clone()
     }
 
     fn interpreted(&self) -> bool {
@@ -32,7 +32,7 @@ impl BFImpl for CwfitzgeraldBfccBfImpl {
     }
 
     fn get(&self) {
-        git_repo(URL.clone(), SRC_DIR.clone());
+        git_repo(&URL, &SRC_DIR);
     }
 
     fn build(&self) {

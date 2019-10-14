@@ -20,8 +20,8 @@ lazy_static::lazy_static! {
 }
 
 impl BFImpl for WilfredBfcBfImpl {
-    fn name(&self) -> &'static str {
-        &*NAME
+    fn name(&self) -> String {
+        NAME.clone()
     }
 
     fn interpreted(&self) -> bool {
@@ -29,18 +29,11 @@ impl BFImpl for WilfredBfcBfImpl {
     }
 
     fn enabled(&self) -> bool {
-        cfg_if::cfg_if!{
-            if #[cfg(windows)] {
-                return false;
-            }
-            else {
-                return true;
-            }
-        };
+        !windows()
     }
 
     fn get(&self) {
-        git_repo(URL.clone(), SRC_DIR.clone());
+        git_repo(&URL, &SRC_DIR);
     }
 
     fn build(&self) {

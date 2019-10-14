@@ -19,8 +19,8 @@ lazy_static::lazy_static! {
 }
 
 impl BFImpl for LifthrasiirEsotopeBfImpl {
-    fn name(&self) -> &'static str {
-        &NAME
+    fn name(&self) -> String {
+        NAME.clone()
     }
 
     fn interpreted(&self) -> bool {
@@ -32,11 +32,10 @@ impl BFImpl for LifthrasiirEsotopeBfImpl {
     }
 
     fn get(&self) {
-        git_repo(URL.clone(), SRC_DIR.clone());
+        git_repo(&URL, &SRC_DIR);
     }
 
-    fn build(&self) {
-    }
+    fn build(&self) {}
 
     fn prepare(&self, file: PathBuf) {
         create_dir_all(&*OUT_FOLDER).unwrap();
@@ -46,7 +45,9 @@ impl BFImpl for LifthrasiirEsotopeBfImpl {
 
         let file_str = file.to_string_lossy().to_string();
 
-        let output_str: String = path_dsl::path!((&*OUT_FOLDER) | "esotope-bfc.c").to_string_lossy().to_string();
+        let output_str: String = path_dsl::path!((&*OUT_FOLDER) | "esotope-bfc.c")
+            .to_string_lossy()
+            .to_string();
 
         cfg_if::cfg_if!(
             if #[cfg(windows)] {

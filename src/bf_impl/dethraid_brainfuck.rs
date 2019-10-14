@@ -19,8 +19,8 @@ lazy_static::lazy_static! {
 }
 
 impl BFImpl for DethraidBrainfuckBfImpl {
-    fn name(&self) -> &'static str {
-        &NAME
+    fn name(&self) -> String {
+        NAME.clone()
     }
 
     fn interpreted(&self) -> bool {
@@ -32,7 +32,7 @@ impl BFImpl for DethraidBrainfuckBfImpl {
     }
 
     fn get(&self) {
-        git_repo(URL.clone(), SRC_DIR.clone());
+        git_repo(&URL, &SRC_DIR);
     }
 
     fn build(&self) {
@@ -43,7 +43,12 @@ impl BFImpl for DethraidBrainfuckBfImpl {
                     .args(&["gmake2"])
                     .current_dir(&*SRC_DIR),
             );
-            run_command(Command::new("make").args(&["config=release_linux", "all", "-C", &*SRC_DIR]));
+            run_command(Command::new("make").args(&[
+                "config=release_linux",
+                "all",
+                "-C",
+                &*SRC_DIR,
+            ]));
         }
         #[cfg(windows)]
         {
@@ -52,7 +57,11 @@ impl BFImpl for DethraidBrainfuckBfImpl {
                     .args(&["vs2019"])
                     .current_dir(&*SRC_DIR),
             );
-            run_command(Command::new("msbuild").args(&["/p:Configuration=Release", "/p:Platform=Win64"]).current_dir(&*SRC_DIR));
+            run_command(
+                Command::new("msbuild")
+                    .args(&["/p:Configuration=Release", "/p:Platform=Win64"])
+                    .current_dir(&*SRC_DIR),
+            );
         }
     }
 
